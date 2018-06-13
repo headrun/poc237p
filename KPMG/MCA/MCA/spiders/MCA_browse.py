@@ -116,7 +116,7 @@ class MCA(Spider):
         dirtrnm = response.meta.get('dirnam','')
         din = response.meta.get('din','')
 	sel = Selector(response)
-        din = sel.xpath('//td[contains(text(),"DIN")]/following-sibling::td/text()').extract()
+        din = ''.join(sel.xpath('//td[contains(text(),"DIN")]/following-sibling::td/text()').extract()).strip()
 	nodes = sel.xpath('//*[@id="companyData"]/tr')
 	for node in nodes:
             cin = ''.join(node.xpath('./td/a//text()').extract()).strip()
