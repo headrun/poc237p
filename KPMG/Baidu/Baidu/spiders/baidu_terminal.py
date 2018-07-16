@@ -7,7 +7,6 @@ from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import NoAlertPresentException
 import unittest, time, re
-import datetime
 import csv
 import time
 from datetime import datetime
@@ -20,13 +19,10 @@ import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 import requests
-from datetime import datetime
-from airasia_utils import *
 from scrapy import log
 from scrapy import signals
 from scrapy.spider import Spider
 from scrapy.http import FormRequest, Request
-from scrapy.selector import Selector
 from scrapy.xlib.pydispatch import dispatcher
 con = MySQLdb.connect(db   = 'BAIDU', \
     host = 'localhost', charset="utf8", use_unicode=True, \
