@@ -193,4 +193,3 @@ class Linkedinvoyagerpeoplesrp(scrapy.Spider):
 		values = [normalize(i) for i in values]
 		self.csv_file.writerow(values)
 		print f_name
-
