@@ -21,7 +21,7 @@ class Linkedinvoyagerpeoplesrp(scrapy.Spider):
 		super(Linkedinvoyagerpeoplesrp, self).__init__(*args, **kwargs)
                 self.login = kwargs.get('login', 'madhav')
 		self.keyword = kwargs.get('key', 'madhav kamath')
-		self.logins_dict = {'kiranmayi': ['cheedellach@gmail.com','cheedellach427'], 'madhav': ['bartmorty@gmail.com', 'bartmorty1234']}
+		self.logins_dict = {'madhav': ['bartmorty@gmail.com', 'bartmorty1234']}
 		self.filename = "LINKEDIN_%s_%s.csv" %(self.keyword, str(datetime.datetime.now().date()))
 	        self.csv_file = self.is_path_file_name(self.filename)
 		self.fields = ["Full Name", "First Name", "Last Name", "Title", "Location", "Role Tenure", "Company", "Website", "Keyword", "Profile url", "Image Url"]

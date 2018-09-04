@@ -17,7 +17,7 @@ class Linkedin_companies(scrapy.Spider):
     start_urls = ('https://www.linkedin.com/uas/login?goback=&trk=hb_signin',)
 
     def __init__(self, *args, **kwargs):
-        self.excel_file_name = 'linkedinposts1_data_%s.csv' % str(
+        self.excel_file_name = 'linkedinpostsupdated_data_%s.csv' % str(
             datetime.datetime.now().date())
         oupf = open(self.excel_file_name, 'ab+')
         self.todays_excel_file = csv.writer(oupf)
@@ -35,7 +35,7 @@ class Linkedin_companies(scrapy.Spider):
 	  ('tryCount', ''),
 	  ('clickedSuggestion', 'false'),
 	  ('session_key', 'bartmorty@gmail.com'),
-	  ('session_password','bartmorty1234'),
+	  ('session_password', 'bartmorty1234'),
 	  ('signin', 'Sign In'),
 	  ('session_redirect', ''),
 	  ('trk', 'hb_signin'),
@@ -94,14 +94,11 @@ class Linkedin_companies(scrapy.Spider):
 				first_name = profile.get('firstName','')
 				last_name = profile.get('lastName','')
 				occupation = profile.get('occupation','')
-				content = element.get('hitInfo', {}).get('com.linkedin.voyager.feed.Update',{}).get('value',{}).get('com.linkedin.voyager.feed.ShareUpdate',{}).get('content',{}).get('com.linkedin.voyager.feed.ShareText',{}).get('text',{}).get('values',[])
+				content = ''.join([sas.get('value', ' ') for sas in element.get('hitInfo', {}).get('com.linkedin.voyager.feed.Update',{}).get('value',{}).get('com.linkedin.voyager.feed.ShareUpdate',{}).get('content',{}).get('com.linkedin.voyager.feed.ShareText',{}).get('text',{}).get('values','')])
 				likes = element.get('hitInfo',{}).get('com.linkedin.voyager.feed.Update',{}).get('socialDetail',{}).get('totalSocialActivityCounts',{}).get('numLikes','')
                                 comments = element.get('hitInfo', {}).get('com.linkedin.voyager.feed.Update',{}).get('socialDetail',{}).get('totalSocialActivityCounts',{}).get('numComments','')
-				for info in content:
-				    information = info.get('value','')
-				    values = [first_name, last_name, occupation, information, likes, comments]
-				    print values
-				    self.todays_excel_file.writerow(values)
+				values = [first_name, last_name, occupation, content, likes, comments]
+                                self.todays_excel_file.writerow(values)
 			else:
 				profile = element.get('hitInfo',{}).get('com.linkedin.voyager.feed.Update',{}).get('value',{}).get('com.linkedin.voyager.feed.ArticleUpdate',{}).get('content',{}).get('com.linkedin.voyager.feed.ShareArticle',{}).get('article',{}).get('article',{}).get('title','')
                                 likes = element.get('hitInfo',{}).get('com.linkedin.voyager.feed.Update',{}).get('socialDetail',{}).get('totalSocialActivityCounts',{}).get('numLikes','')
@@ -116,13 +113,12 @@ class Linkedin_companies(scrapy.Spider):
 				first_name = profile.get('firstName','')
 				last_name = profile.get('lastName','')
 				occupation = profile.get('occupation','')
-				content = eachjso.get('hitInfo', {}).get('com.linkedin.voyager.feed.Update',{}).get('value',{}).get('com.linkedin.voyager.feed.ShareUpdate',{}).get('content',{}).get('com.linkedin.voyager.feed.ShareText',{}).get('text',{}).get('values','')
-				for info in content:
-					information = info.get('value','')
-					likes = eachjso.get('hitInfo',{}).get('com.linkedin.voyager.feed.Update',{}).get('socialDetail',{}).get('totalSocialActivityCounts',{}).get('numLikes','')
-					comments = eachjso.get('hitInfo', {}).get('com.linkedin.voyager.feed.Update',{}).get('socialDetail',{}).get('totalSocialActivityCounts',{}).get('numComments','')
-					values = [first_name,last_name,occupation,information,likes,comments]
-					self.todays_excel_file.writerow(values)
+				#content = eachjso.get('hitInfo', {}).get('com.linkedin.voyager.feed.Update',{}).get('value',{}).get('com.linkedin.voyager.feed.ShareUpdate',{}).get('content',{}).get('com.linkedin.voyager.feed.ShareText',{}).get('text',{}).get('values','')
+				content = ''.join([sas.get('value', ' ') for sas in eachjso.get('hitInfo', {}).get('com.linkedin.voyager.feed.Update',{}).get('value',{}).get('com.linkedin.voyager.feed.ShareUpdate',{}).get('content',{}).get('com.linkedin.voyager.feed.ShareText',{}).get('text',{}).get('values','')])
+				likes = eachjso.get('hitInfo',{}).get('com.linkedin.voyager.feed.Update',{}).get('socialDetail',{}).get('totalSocialActivityCounts',{}).get('numLikes','')
+				comments = eachjso.get('hitInfo', {}).get('com.linkedin.voyager.feed.Update',{}).get('socialDetail',{}).get('totalSocialActivityCounts',{}).get('numComments','')
+				values = [first_name,last_name,occupation,content,likes,comments]
+                                self.todays_excel_file.writerow(values)
 			else:
 				profile = eachjso.get('hitInfo',{}).get('com.linkedin.voyager.feed.Update',{}).get('value',{}).get('com.linkedin.voyager.feed.ArticleUpdate',{}).get('content',{}).get('com.linkedin.voyager.feed.ShareArticle',{}).get('article',{}).get('article',{}).get('title','')
 				likes = eachjso.get('hitInfo',{}).get('com.linkedin.voyager.feed.Update',{}).get('socialDetail',{}).get('totalSocialActivityCounts',{}).get('numLikes','')
@@ -137,4 +133,5 @@ class Linkedin_companies(scrapy.Spider):
 		if total_data > count_data+start_data and json_elements:
 			cons_part = "&count=%s&start=%s"%(count_data, start_data+count_data)
 			retrun_url = "%s%s"%(main_url,cons_part)
-			yield Request(retrun_url, headers=headers, callback=self.parse_again, meta={'main_url':main_url, 'headers':headers, "nav":"true"})
+			if 'start=36' not in retrun_url:
+				yield Request(retrun_url, headers=headers, callback=self.parse_again, meta={'main_url':main_url, 'headers':headers, "nav":"true"})
