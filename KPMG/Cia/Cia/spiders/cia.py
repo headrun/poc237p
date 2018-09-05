@@ -37,7 +37,7 @@ class CIAgov(Spider):
     def parse_text(self, response):
         sel = Selector(response)
         reference = response.url
-        country = sel.xpath('//div[@id="countryOutput"]//td[@class="countryName"]//span//text()').extract()
+        country = ''.join(sel.xpath('//div[@id="countryOutput"]//td[@class="countryName"]//span//text()').extract())
         containers = response.xpath('//div[@style="page-break-inside: !important;"]')
         for container in containers:
             key = ''.join(container.xpath('.//span[@class="title"]//text()').extract()).strip()
