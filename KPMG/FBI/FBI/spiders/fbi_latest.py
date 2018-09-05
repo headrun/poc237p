@@ -17,9 +17,9 @@ class FBI(Spider):
     start_urls = ['https://www.fbi.gov/wanted']
 
     def __init__(self):
-        self.filename = "fbi%s.csv" %(str(datetime.datetime.now().date()))
+        self.filename = "fbigov%s.csv" %(str(datetime.datetime.now().date()))
         self.csv_file = self.is_path_file_name(self.filename)
-        self.fields = ["Name", "URL", "Alias", "Remarks", "Caution" ]
+        self.fields = ["Name", "URL", "Alias", "Remarks", "Caution" , "Citizenship"]
         self.csv_file.writerow(self.fields)
 
     def is_path_file_name(self, excel_file_name):
@@ -163,6 +163,7 @@ class FBI(Spider):
         aliases = ''.join(sel.xpath('//section[@id="content-core"]//div[@class="wanted-person-aliases"]/p//text()').extract())
         remarks = ''.join(sel.xpath('//section[@id="content-core"]//div[@class="wanted-person-remarks"]/p//text()').extract())
         caution = ''.join(sel.xpath('//section[@id="content-core"]//div[@class="wanted-person-caution"]/p//text()').extract())
-        csv_values = [name, url, aliases, remarks, caution ]
+	nationality = ''.join(sel.xpath('//table[@class="table table-striped wanted-person-description"]//td[contains(text(), "Nationality")]/following-sibling::td//text()').extract())
+        csv_values = [name, url, aliases, remarks, caution, nationality]
         self.csv_file.writerow(csv_values)
 
