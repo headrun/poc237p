@@ -28,10 +28,8 @@ class CIAgov(Spider):
     def parse(self, response):
         sel = Selector(response)
         total_links = sel.xpath('//div[@id="cosAlphaList"]//@href').extract()
-        print total_links
         for each_link in total_links:
             link = "https://www.cia.gov/library/publications/resources/world-leaders-1/" + each_link
-            print link
             yield Request(link, callback=self.parse_text)
 
     def parse_text(self, response):
