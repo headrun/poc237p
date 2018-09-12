@@ -98,9 +98,7 @@ class FBI(Spider):
                         name_url_nodes = sel.xpath('//div[@id="query-results-0f737222c5054a81a120bce207b0446a"]//ul//li')
                         for node in name_url_nodes:
                                 name = ''.join(node.xpath('./h3/a//text()').extract())
-                                print name
                                 each_url = ''.join(node.xpath('./h3/a/@href').extract())
-                                print each_url
                                 yield Request(each_url, callback=self.parse_detail, meta = {'name':name})
 		
 		if 'fugitives' in url:
@@ -121,9 +119,7 @@ class FBI(Spider):
                         name_url_nodes = sel.xpath('//div[@id="query-results-querylisting-1"]//ul//li')
                         for node in name_url_nodes:
                                 name = ''.join(node.xpath('./h3/a//text()').extract())
-                                print name
                                 each_url = ''.join(node.xpath('./h3/a/@href').extract())
-                                print each_url
                                 yield Request(each_url, callback=self.parse_detail, meta = {'name':name})
 
 		if 'bank-robbers' in url:
@@ -137,23 +133,17 @@ class FBI(Spider):
                         name_url_nodes = sel.xpath('//div[@id="query-results-querylisting-1"]//ul//li')
                         for node in name_url_nodes:
                                 name = ''.join(node.xpath('./h3/a//text()').extract())
-                                print name
                                 each_url = ''.join(node.xpath('./h3/a/@href').extract())
-                                print each_url
                                 yield Request(each_url, callback=self.parse_detail, meta = {'name':name})
 
     def parse_allnames(self, response):
                 sel = Selector(response)
-                #name_url_nodes = sel.xpath('//div[@id="query-results-55d8265003c84ff2a7688d7acd8ebd5a"]//ul//li')
-		
 		name_url_nodes = sel.xpath('//div[@class="query-results pat-pager"]//ul//li')
                 for node in name_url_nodes:
                         name = ''.join(node.xpath('./p/a//text()').extract())
 			if not name: name = ''.join(node.xpath('./h3/a//text()').extract())
-                        print name
                         each_url = ''.join(node.xpath('./p/a/@href').extract())
 			if not each_url: each_url = ''.join(node.xpath('./h3/a/@href').extract())
-                        print each_url
                         yield Request(each_url, callback=self.parse_detail,meta = {'name':name})
 
     def parse_detail(self, response):
