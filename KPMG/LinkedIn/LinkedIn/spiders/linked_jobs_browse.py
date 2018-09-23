@@ -12,7 +12,7 @@ sys.setdefaultencoding('utf8')
 
 
 class Linkedin_companies(scrapy.Spider):
-    name = 'linkedin_jobs_browse'
+    name = 'linkedin_jobs_browse1'
     allowed_domains = ["linkedin.com"]
     start_urls = ('https://www.linkedin.com/uas/login?goback=&trk=hb_signin',)
 
@@ -21,7 +21,7 @@ class Linkedin_companies(scrapy.Spider):
             datetime.datetime.now().date())
         oupf = open(self.excel_file_name, 'ab+')
         self.todays_excel_file = csv.writer(oupf)
-        self.header_params = ['company_id', 'jobview_url', 'Position(Company)']
+        self.header_params = ['company_id', 'jobview_url', 'Position(Company)', 'Description']
         self.todays_excel_file.writerow(self.header_params)
 
     def parse(self, response):
@@ -34,8 +34,8 @@ class Linkedin_companies(scrapy.Spider):
 	  ('source_app', ''),
 	  ('tryCount', ''),
 	  ('clickedSuggestion', 'false'),
-	  ('session_key', 'bartmorty@gmail.com'),  
-	  ('session_password', 'bartmorty1234'),
+	  ('session_key', 'ramyalatha3004@gmail.com'),
+	  ('session_password', '01491a0237'),
 	  ('signin', 'Sign In'),
 	  ('session_redirect', ''),
 	  ('trk', 'hb_signin'),
@@ -87,18 +87,20 @@ class Linkedin_companies(scrapy.Spider):
 	for element in inner_elements:
 	    compnay_id = ''.join(element.get('hitInfo', {}).get(
 		'com.linkedin.voyager.search.SearchJobJserp', {}).get('jobPosting', ''))
+	    job_description = ''.join(element.get('hitInfo', {}).get('com.linkedin.voyager.search.SearchJobJserp',{}).get('descriptionSnippet',{}))
 	    compnay_full_id = compnay_id.split('jobPosting:')[-1]
 	    job_view_url = ''.join(
 		"https://www.linkedin.com/jobs/view/%s/" % (compnay_full_id))
 	    company_title = ''.join(element.get('hitInfo', {}).get(
 		'com.linkedin.voyager.search.SearchJobJserp', {}).get('jobPostingResolutionResult', {}).get('title', ''))
-	    values = [compnay_full_id, job_view_url, company_title]
+	    values = [compnay_full_id, job_view_url, company_title, job_description]
 	    self.todays_excel_file.writerow(values)
 	url_paging  = json_tmp.get('paging',[])
 	if url_paging:
 		count_data = url_paging.get('count','')
 		start_data = url_paging.get('start','')
 		total_data = url_paging.get('total','')
+		#if total_data > count_data+start_data:
 		if total_data > count_data+start_data and inner_elements:
 			cons_part = "&count=%s&start=%s"%(count_data, start_data+count_data)
 			retrun_url = "%s%s"%(main_url,cons_part)
