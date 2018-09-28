@@ -15,16 +15,14 @@ class WorldBank(BaseSpider):
         start_urls = ['https://star.worldbank.org/corruption-cases/assetrecovery/']
 
         def __init__(self, *args, **kwargs):
-                self.headers = ['Pdf url', 'Case Name', 'Jurisdiction of Settlement', 'Type of Settlement', 'Monetary Sanctions', 'Offenses-Alleged', 'Summary']
+                self.headers = ['Case Name', 'Jurisdiction of Settlement', 'Type of Settlement', 'Monetary Sanctions', 'Offenses-Alleged', 'Summary']
                 oupf1 = open('world_stars_settlements-%s.csv'  % (str(datetime.date.today())), 'wb+')
                 self.csv_file  = csv.writer(oupf1)
                 self.csv_file.writerow(self.headers)
-		self.headings = ['Pdf url','Case title', 'Jurisdiction of Origin', 'UNCAC Offenses Implicated', 'Money laundering Implicated', 'Legal Basis for Asset Recovery', 'Contributing Factors in Asset Recovery', 'Assets Adjudicated/Not Yet Returned (USD)', 'Case Summary', 'Disposition of Criminal Case(s)']
+		self.headings = ['Case title', 'Jurisdiction of Origin', 'UNCAC Offenses Implicated', 'Money laundering Implicated', 'Legal Basis for Asset Recovery', 'Contributing Factors in Asset Recovery', 'Assets Adjudicated/Not Yet Returned (USD)', 'Case Summary', 'Disposition of Criminal Case(s)']
         	oupf2 = open('world_stars_assets-%s.csv' %(str(datetime.date.today())), 'wb+')
         	self.document_file = csv.writer(oupf2)
         	self.document_file.writerow(self.headings)
-
-
 
         def parse(self, response):
                 sel = Selector(response)
@@ -33,10 +31,10 @@ class WorldBank(BaseSpider):
 			settle_url = 'https://star.worldbank.org' + settlements
 			yield Request(settle_url, callback=self.parse_settlements)
 
-		'''asset_recovery = ''.join(sel.xpath('//section[@id="block-facetapi-60wthpqk1klbiwro0hdjojlrqgsm7zzv"]//ul[@id="facetapi-facet-apachesolrstar-1b-block-bundle"]/li[2]/a/@href').extract())
+		asset_recovery = ''.join(sel.xpath('//section[@id="block-facetapi-60wthpqk1klbiwro0hdjojlrqgsm7zzv"]//ul[@id="facetapi-facet-apachesolrstar-1b-block-bundle"]/li[2]/a/@href').extract())
 		if asset_recovery:
 			asset_url = 'https://star.worldbank.org' + asset_recovery
-			yield Request(asset_url, callback=self.parse_assests)'''
+			yield Request(asset_url, callback=self.parse_assests)
 
 	def parse_settlements(self, response):	
 	    headers = {
@@ -842,87 +840,297 @@ class WorldBank(BaseSpider):
 	  ('entity_ids[settlements][]', '20486'),
 	]
 
-	    yield FormRequest('https://star.worldbank.org/corruption-cases/generate/xlsx', headers=headers, formdata=data, callback=self.parse_excel)
+	    yield FormRequest('https://star.worldbank.org/corruption-cases/generate/xlsx', headers=headers, formdata=data, callback=self.parse_excel_settlements)
 
-        def parse_excel(self, response):
+        def parse_excel_settlements(self, response):
 	    excel_response = json.loads(response.body)
 	    settlements = excel_response.get('settlements','')
 	    for each in settlements:
 		case_id = each.get('Case ID', '')
-		
-	    import pdb;pdb.set_trace()		
-	    '''sel = Selector(response)
-		import pdb;pdb.set_trace()
-		info_nodes = sel.xpath('//section[@id="block-system-main"]/table[@class="table table-hover"]/tbody//tr')
-		for node in info_nodes:
-		pdf_url = ''.join(node.xpath('./td/following-sibling::td/a/@href').extract())
-		title = ''.join(node.xpath('./td/a//text()').extract()).strip()
-		jurisdiction = ''.join(node.xpath('./td[2]//text()').extract()).strip()
-		yield Request(pdf_url, callback=self.parse_detailed_information, meta = {'case_name':title, 'jurisdiction':jurisdiction})
-
-		url_paging = ''.join(sel.xpath('//div[@class="col-md-12 col-sm-12 npr npl paginationCont"]//div[@class="col-md-4 col-sm-4 txtRight"]/span[@class="prev"]/following-sibling::span/a/@href').extract())
-		if not url_paging: url_paging = ''.join(sel.xpath('//div[@class="col-md-12 col-sm-12 npr npl paginationCont"]//div[@class="col-md-4 col-sm-4 txtRight"]/span/a/@href').extract())
-		pagination = 'https://star.worldbank.org/' + url_paging
-		yield Request(pagination, callback=self.parse_settlements)
-
-	def parse_detailed_information(self, response):
-		url = response.url
-		case_name = response.meta.get('case_name','')
-		jurisdiction = response.meta.get('jurisdiction','')
-		sel = Selector(response)
-		info = response.body
-		Type_of_Settlement =  ''.join(re.findall('Type of Settlement.* Tf (.*) TJ .*Legal Form of Settlement', info.replace('\n', '')))
-		Type_of_Settlement = ''.join(re.findall(r'\((.*?)\)',Type_of_Settlement)) 
-		Monetary_Sanctions =  ''.join(re.findall('Monetary Sanctions.* Tf (.*) TJ .*Total Monetary Sanctions', info.replace('\n', '')))
-		Monetary_Sanctions = ''.join(re.findall(r'\((.*?)\)',Monetary_Sanctions))
-		Offense_alleged = ''.join(re.findall('Offenses - Alleged.* Tf (.*) TJ .*Offenses - Settled', info.replace('\n', '')))
-		Offense_alleged = ''.join(re.findall(r'\((.*?)\)',Offense_alleged))
-		adsa = ''.join(re.findall('Summary:\xa0\)\](.*)\[\(Sources', info.replace('\n', '')))
-		des_list = re.findall('\([^\[\]]*\)', adsa)
-		final_desc = ''.join([des.replace('))', ') ').replace('((', ' (').strip('(').strip(')') for des in des_list]).replace('\\','').strip()
-		values = [url, case_name, jurisdiction, Type_of_Settlement, Monetary_Sanctions, Offense_alleged, final_desc]
-		self.csv_file.writerow(values)
-
-
+		type_of_settlement = each.get('Type of Settlement')
+		jurisdiction = each.get('Jurisdiction of Settlement / Enforcement Agency')
+		monetary = each.get('Monetary Sanctions  (Types)')
+		offense = each.get('Offenses - Alleged')
+		summary = each.get('Summary')
+		values = [case_id, jurisdiction, type_of_settlement, monetary, offense, summary]
+                self.csv_file.writerow(values)
+	
 	def parse_assests(self, response):
-		sel = Selector(response)
-		info_nodes = sel.xpath('//section[@id="block-system-main"]/table[@class="table table-hover"]/tbody//tr')
-                for node in info_nodes:
-                        pdf_url = ''.join(node.xpath('./td/following-sibling::td/a/@href').extract())
-                        title = ''.join(node.xpath('./td/a//text()').extract()).strip()
-			jurisdiction = ''.join(node.xpath('./td[3]//text()').extract()).strip()
-			yield Request(pdf_url, callback=self.parse_complete_assests,  meta = {'case_name':title, 'jurisdiction':jurisdiction})
-
-		url_paging = ''.join(sel.xpath('//div[@class="col-md-12 col-sm-12 npr npl paginationCont"]//div[@class="col-md-4 col-sm-4 txtRight"]//span[2]/a/@href').extract())
-		if not url_paging: url_paging = ''.join(sel.xpath('//div[@class="col-md-12 col-sm-12 npr npl paginationCont"]//div[@class="col-md-4 col-sm-4 txtRight"]/span/a/@href').extract())
-                pagination = 'https://star.worldbank.org/' + url_paging
-		yield Request(pagination, callback=self.parse_assests)
-
-	def parse_complete_assests(self, response):
 		url = response.url
-		case_name = response.meta.get('case_name','') 
-		jurisdiction = response.meta.get('jurisdiction','')
-		assests_info = response.body
-		offen = ''.join(re.findall('UNCAC Offenses Implicated:\xa0\)\](.*)\[\(Money laundering Implicated', assests_info.replace('\n', '')))
-		Offenses = ''.join(re.findall('\([^\[\]]*\)', offen))
-		Offenses = ''.join(re.findall(r'\((.*?)\)',Offenses))
-		money_laundering = ''.join(re.findall('Money laundering Implicated:\xa0\)\](.*)\[\(Legal Basis for Asset Recovery', assests_info.replace('\n', ''))) 
-		money_laundering = ''.join(re.findall('\([^\[\]]*\)', money_laundering))
-		money_laundering = ''.join(re.findall(r'\((.*?)\)',money_laundering))
-		legal_basis = ''.join(re.findall('Legal Basis for Asset Recovery:\xa0\)\](.*)\[\(Intl.Cooperation: MLAT/Letter of Request?', assests_info.replace('\n', ''))) 
-		legal_basis = ''.join(re.findall('\([^\[\]]*\)', legal_basis))
-		legal_basis = ''.join(re.findall(r'\((.*?)\)',legal_basis))
-		contri_factors = ''.join(re.findall('Contributing Factors in Asset Recovery:\xa0\)\](.*)\[\(Status of Asset Recovery', assests_info.replace('\n', '')))
-		con_list = re.findall('\([^\[\]]*\)', contri_factors)
-		factors = ''.join([con.replace('))', ') ').replace('((', ' (').strip('(').strip(')') for con in con_list]).replace('\\','').strip()
-		assests_adjudicated = ''.join(re.findall('Assets Adjudicated, Not Yet Returned(.*)Assets Returned', assests_info.replace('\n', '')))
-		adjudicated = re.findall('\([^\[\]]*\)', assests_adjudicated)
-		final_Adjudicated = ''.join([adj.replace('))', ') ').replace('((', ' (').strip('(').strip(')') for adj in adjudicated]).replace('\\','').strip().replace('USD):\xa0','')
-		summary = ''.join(re.findall('Case Summary:\xa0\)\](.*)\[\(Disposition of Criminal Case', assests_info.replace('\n', '')))
-		sum_list = re.findall('\([^\[\]]*\)', summary)
-		case_summary =''.join([sum.replace('))', ') ').replace('((', ' (').strip('(').strip(')') for sum in sum_list]).replace('\\','').strip()
-		invest = ''.join(re.findall('Disposition of Criminal Case(.*)Jurisdiction of Origin: Investigative Agency', assests_info.replace('\n', '')))
-		jur_invest = re.findall('\([^\[\]]*\)', invest)
-		final_invest = ''.join([jur.replace('))', ') ').replace('((', ' (').strip('(').strip(')') for jur in jur_invest]).replace('\\','').strip().replace('s):\xa0','')
-		values = [url, case_name, jurisdiction, Offenses, money_laundering, legal_basis, factors, final_Adjudicated, case_summary, final_invest]
-            	self.document_file.writerow(values)'''
+		headers = {
+		    'origin': 'https://star.worldbank.org',
+		    'accept-encoding': 'gzip, deflate, br',
+		    'accept-language': 'en-GB,en-US;q=0.9,en;q=0.8',
+		    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
+		    'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+		    'accept': '*/*',
+		    'referer': 'https://star.worldbank.org/corruption-cases/assetrecovery/?f%5B0%5D=bundle%3Aarw',
+		    'authority': 'star.worldbank.org',
+		    'x-requested-with': 'XMLHttpRequest',
+		}
+
+		data = [
+		  ('entity_ids[arw][]', '18426'),
+		  ('entity_ids[arw][]', '18427'),
+		  ('entity_ids[arw][]', '18428'),
+		  ('entity_ids[arw][]', '18429'),
+		  ('entity_ids[arw][]', '18430'),
+		  ('entity_ids[arw][]', '18431'),
+		  ('entity_ids[arw][]', '18432'),
+		  ('entity_ids[arw][]', '18433'),
+		  ('entity_ids[arw][]', '18434'),
+		  ('entity_ids[arw][]', '18435'),
+		  ('entity_ids[arw][]', '18436'),
+		  ('entity_ids[arw][]', '18437'),
+		  ('entity_ids[arw][]', '18438'),
+		  ('entity_ids[arw][]', '18439'),
+		  ('entity_ids[arw][]', '18440'),
+		  ('entity_ids[arw][]', '18441'),
+		  ('entity_ids[arw][]', '18442'),
+		  ('entity_ids[arw][]', '18443'),
+		  ('entity_ids[arw][]', '18444'),
+		  ('entity_ids[arw][]', '18445'),
+		  ('entity_ids[arw][]', '18446'),
+		  ('entity_ids[arw][]', '18447'),
+		  ('entity_ids[arw][]', '18448'),
+		  ('entity_ids[arw][]', '18449'),
+		  ('entity_ids[arw][]', '18450'),
+		  ('entity_ids[arw][]', '18451'),
+		  ('entity_ids[arw][]', '18452'),
+		  ('entity_ids[arw][]', '18453'),
+		  ('entity_ids[arw][]', '18454'),
+		  ('entity_ids[arw][]', '18455'),
+		  ('entity_ids[arw][]', '18456'),
+		  ('entity_ids[arw][]', '18457'),
+		  ('entity_ids[arw][]', '18458'),
+		  ('entity_ids[arw][]', '18459'),
+		  ('entity_ids[arw][]', '18461'),
+		  ('entity_ids[arw][]', '18462'),
+		  ('entity_ids[arw][]', '18463'),
+		  ('entity_ids[arw][]', '18464'),
+		  ('entity_ids[arw][]', '18465'),
+		  ('entity_ids[arw][]', '18466'),
+		  ('entity_ids[arw][]', '18467'),
+		  ('entity_ids[arw][]', '18468'),
+		  ('entity_ids[arw][]', '18469'),
+		  ('entity_ids[arw][]', '18470'),
+		  ('entity_ids[arw][]', '18471'),
+		  ('entity_ids[arw][]', '18472'),
+		  ('entity_ids[arw][]', '18473'),
+		  ('entity_ids[arw][]', '18474'),
+		  ('entity_ids[arw][]', '18475'),
+		  ('entity_ids[arw][]', '18476'),
+		  ('entity_ids[arw][]', '18477'),
+		  ('entity_ids[arw][]', '18478'),
+		  ('entity_ids[arw][]', '18479'),
+		  ('entity_ids[arw][]', '18482'),
+		  ('entity_ids[arw][]', '18483'),
+		  ('entity_ids[arw][]', '18484'),
+		  ('entity_ids[arw][]', '18485'),
+		  ('entity_ids[arw][]', '18486'),
+		  ('entity_ids[arw][]', '18487'),
+		  ('entity_ids[arw][]', '18489'),
+		  ('entity_ids[arw][]', '18490'),
+		  ('entity_ids[arw][]', '18491'),
+		  ('entity_ids[arw][]', '18492'),
+		  ('entity_ids[arw][]', '18493'),
+		  ('entity_ids[arw][]', '18494'),
+		  ('entity_ids[arw][]', '18495'),
+		  ('entity_ids[arw][]', '18496'),
+		  ('entity_ids[arw][]', '18497'),
+		  ('entity_ids[arw][]', '18498'),
+		  ('entity_ids[arw][]', '18499'),
+		  ('entity_ids[arw][]', '18500'),
+		  ('entity_ids[arw][]', '18501'),
+		  ('entity_ids[arw][]', '18502'),
+		  ('entity_ids[arw][]', '18503'),
+		  ('entity_ids[arw][]', '18504'),
+		  ('entity_ids[arw][]', '18505'),
+		  ('entity_ids[arw][]', '18506'),
+		  ('entity_ids[arw][]', '18507'),
+		  ('entity_ids[arw][]', '18508'),
+		  ('entity_ids[arw][]', '18509'),
+		  ('entity_ids[arw][]', '18510'),
+		  ('entity_ids[arw][]', '18511'),
+		  ('entity_ids[arw][]', '18512'),
+		  ('entity_ids[arw][]', '18513'),
+		  ('entity_ids[arw][]', '18514'),
+		  ('entity_ids[arw][]', '18515'),
+		  ('entity_ids[arw][]', '18516'),
+		  ('entity_ids[arw][]', '18517'),
+		  ('entity_ids[arw][]', '18518'),
+		  ('entity_ids[arw][]', '18521'),
+		  ('entity_ids[arw][]', '18522'),
+		  ('entity_ids[arw][]', '18523'),
+		  ('entity_ids[arw][]', '18524'),
+		  ('entity_ids[arw][]', '18525'),
+		  ('entity_ids[arw][]', '18526'),
+		  ('entity_ids[arw][]', '18527'),
+		  ('entity_ids[arw][]', '18528'),
+		  ('entity_ids[arw][]', '18529'),
+		  ('entity_ids[arw][]', '18530'),
+		  ('entity_ids[arw][]', '18531'),
+		  ('entity_ids[arw][]', '18532'),
+		  ('entity_ids[arw][]', '18533'),
+		  ('entity_ids[arw][]', '18534'),
+		  ('entity_ids[arw][]', '18535'),
+		  ('entity_ids[arw][]', '18536'),
+		  ('entity_ids[arw][]', '18537'),
+		  ('entity_ids[arw][]', '18538'),
+		  ('entity_ids[arw][]', '18539'),
+		  ('entity_ids[arw][]', '18540'),
+		  ('entity_ids[arw][]', '18541'),
+		  ('entity_ids[arw][]', '18542'),
+		  ('entity_ids[arw][]', '18543'),
+		  ('entity_ids[arw][]', '18544'),
+		  ('entity_ids[arw][]', '18546'),
+		  ('entity_ids[arw][]', '18547'),
+		  ('entity_ids[arw][]', '18548'),
+		  ('entity_ids[arw][]', '18549'),
+		  ('entity_ids[arw][]', '18551'),
+		  ('entity_ids[arw][]', '18552'),
+		  ('entity_ids[arw][]', '18553'),
+		  ('entity_ids[arw][]', '18554'),
+		  ('entity_ids[arw][]', '18555'),
+		  ('entity_ids[arw][]', '18556'),
+		  ('entity_ids[arw][]', '18557'),
+		  ('entity_ids[arw][]', '18558'),
+		  ('entity_ids[arw][]', '18559'),
+		  ('entity_ids[arw][]', '18560'),
+		  ('entity_ids[arw][]', '18561'),
+		  ('entity_ids[arw][]', '18562'),
+		  ('entity_ids[arw][]', '18563'),
+		  ('entity_ids[arw][]', '18564'),
+		  ('entity_ids[arw][]', '18565'),
+		  ('entity_ids[arw][]', '18566'),
+		  ('entity_ids[arw][]', '18567'),
+		  ('entity_ids[arw][]', '18568'),
+		  ('entity_ids[arw][]', '18569'),
+		  ('entity_ids[arw][]', '18570'),
+		  ('entity_ids[arw][]', '18571'),
+		  ('entity_ids[arw][]', '18572'),
+		  ('entity_ids[arw][]', '18573'),
+		  ('entity_ids[arw][]', '18574'),
+		  ('entity_ids[arw][]', '18575'),
+		  ('entity_ids[arw][]', '18576'),
+		  ('entity_ids[arw][]', '18577'),
+		  ('entity_ids[arw][]', '18578'),
+		  ('entity_ids[arw][]', '18579'),
+		  ('entity_ids[arw][]', '18580'),
+		  ('entity_ids[arw][]', '18581'),
+		  ('entity_ids[arw][]', '18584'),
+		  ('entity_ids[arw][]', '18585'),
+		  ('entity_ids[arw][]', '18586'),
+		  ('entity_ids[arw][]', '18587'),
+		  ('entity_ids[arw][]', '18588'),
+		  ('entity_ids[arw][]', '18589'),
+		  ('entity_ids[arw][]', '18590'),
+		  ('entity_ids[arw][]', '18591'),
+		  ('entity_ids[arw][]', '18592'),
+		  ('entity_ids[arw][]', '18593'),
+		  ('entity_ids[arw][]', '18594'),
+		  ('entity_ids[arw][]', '18595'),
+		  ('entity_ids[arw][]', '18596'),
+		  ('entity_ids[arw][]', '18597'),
+		  ('entity_ids[arw][]', '18598'),
+		  ('entity_ids[arw][]', '18599'),
+		  ('entity_ids[arw][]', '18600'),
+		  ('entity_ids[arw][]', '18601'),
+		  ('entity_ids[arw][]', '18602'),
+		  ('entity_ids[arw][]', '18603'),
+		  ('entity_ids[arw][]', '18604'),
+		  ('entity_ids[arw][]', '19571'),
+		  ('entity_ids[arw][]', '19572'),
+		  ('entity_ids[arw][]', '19573'),
+		  ('entity_ids[arw][]', '19574'),
+		  ('entity_ids[arw][]', '19575'),
+		  ('entity_ids[arw][]', '19576'),
+		  ('entity_ids[arw][]', '19577'),
+		  ('entity_ids[arw][]', '19578'),
+		  ('entity_ids[arw][]', '19579'),
+		  ('entity_ids[arw][]', '19580'),
+		  ('entity_ids[arw][]', '19581'),
+		  ('entity_ids[arw][]', '19582'),
+		  ('entity_ids[arw][]', '19583'),
+		  ('entity_ids[arw][]', '19584'),
+		  ('entity_ids[arw][]', '19585'),
+		  ('entity_ids[arw][]', '19586'),
+		  ('entity_ids[arw][]', '19587'),
+		  ('entity_ids[arw][]', '19588'),
+		  ('entity_ids[arw][]', '19589'),
+		  ('entity_ids[arw][]', '19590'),
+		  ('entity_ids[arw][]', '19591'),
+		  ('entity_ids[arw][]', '19592'),
+		  ('entity_ids[arw][]', '19594'),
+		  ('entity_ids[arw][]', '19595'),
+		  ('entity_ids[arw][]', '19596'),
+		  ('entity_ids[arw][]', '19597'),
+		  ('entity_ids[arw][]', '19598'),
+		  ('entity_ids[arw][]', '19599'),
+		  ('entity_ids[arw][]', '19600'),
+		  ('entity_ids[arw][]', '20306'),
+		  ('entity_ids[arw][]', '20307'),
+		  ('entity_ids[arw][]', '20308'),
+		  ('entity_ids[arw][]', '20309'),
+		  ('entity_ids[arw][]', '20310'),
+		  ('entity_ids[arw][]', '20311'),
+		  ('entity_ids[arw][]', '20312'),
+		  ('entity_ids[arw][]', '20313'),
+		  ('entity_ids[arw][]', '20314'),
+		  ('entity_ids[arw][]', '20315'),
+		  ('entity_ids[arw][]', '20316'),
+		  ('entity_ids[arw][]', '20317'),
+		  ('entity_ids[arw][]', '20318'),
+		  ('entity_ids[arw][]', '20319'),
+		  ('entity_ids[arw][]', '20320'),
+		  ('entity_ids[arw][]', '20321'),
+		  ('entity_ids[arw][]', '20322'),
+		  ('entity_ids[arw][]', '20324'),
+		  ('entity_ids[arw][]', '20325'),
+		  ('entity_ids[arw][]', '20326'),
+		  ('entity_ids[arw][]', '20327'),
+		  ('entity_ids[arw][]', '20328'),
+		  ('entity_ids[arw][]', '20329'),
+		  ('entity_ids[arw][]', '20330'),
+		  ('entity_ids[arw][]', '20331'),
+		  ('entity_ids[arw][]', '20332'),
+		  ('entity_ids[arw][]', '20333'),
+		  ('entity_ids[arw][]', '20334'),
+		  ('entity_ids[arw][]', '20336'),
+		  ('entity_ids[arw][]', '20337'),
+		  ('entity_ids[arw][]', '20338'),
+		  ('entity_ids[arw][]', '20339'),
+		  ('entity_ids[arw][]', '20340'),
+		  ('entity_ids[arw][]', '20341'),
+		  ('entity_ids[arw][]', '20342'),
+		  ('entity_ids[arw][]', '20345'),
+		  ('entity_ids[arw][]', '20346'),
+		  ('entity_ids[arw][]', '20349'),
+		  ('entity_ids[arw][]', '20487'),
+		  ('entity_ids[arw][]', '20488'),
+		  ('entity_ids[arw][]', '20489'),
+		  ('entity_ids[arw][]', '20490'),
+		  ('entity_ids[arw][]', '20494'),
+		  ('entity_ids[arw][]', '20496'),
+		  ('entity_ids[arw][]', '20497'),
+		  ('entity_ids[arw][]', '20498'),
+		  ('entity_ids[arw][]', '20499'),
+		]
+
+		yield FormRequest('https://star.worldbank.org/corruption-cases/generate/xlsx', headers=headers, formdata=data, callback =self.parse_excel_assests)
+
+	def parse_excel_assests(self, response):
+            asset_response = json.loads(response.body)
+            assets = asset_response.get('arw','')
+            for each in assets:
+		case_title =  each.get('Case Title (Name of Public Official or Entity Allegedly Involved)')
+		jurisdiction = each.get('Jurisdiction of Origin: Investigative Agency')
+		uncac = each.get('UNCAC Offenses Implicated')
+		money_laundering = each.get('Money laundering Implicated')
+		asser_recovery = each.get('Legal Basis for Asset Recovery')
+		contributing_factors = each.get('Contributing Factors in Asset Recovery')
+		assets_adjudicated = each.get('Assets Adjudicated, Not Yet Returned (USD)')
+		case_summary = each.get('Case Summary')
+		disposition = each.get('Disposition of Criminal Case(s)')
+		values = [case_title, jurisdiction, uncac, money_laundering, asser_recovery, contributing_factors, assets_adjudicated, case_summary, disposition]
+		self.document_file.writerow(values)
